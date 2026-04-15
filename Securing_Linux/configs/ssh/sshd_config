@@ -1,0 +1,42 @@
+# Hardened SSH Daemon Configuration
+# Project: Linux Hardening + CIS Benchmark
+# Apply: sudo cp sshd_config /etc/ssh/sshd_config && sudo systemctl restart sshd
+
+# ── Network ──────────────────────────────────────────────────
+Port 2222
+AddressFamily inet
+ListenAddress 0.0.0.0
+
+# ── Authentication ────────────────────────────────────────────
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PermitEmptyPasswords no
+MaxAuthTries 3
+LoginGraceTime 30
+AllowUsers yourusername
+
+# ── Session ───────────────────────────────────────────────────
+ClientAliveInterval 300
+ClientAliveCountMax 2
+MaxSessions 3
+
+# ── Features (disabled for hardening) ─────────────────────────
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+PermitTunnel no
+GatewayPorts no
+
+# ── Protocol ──────────────────────────────────────────────────
+Protocol 2
+
+# ── Logging ───────────────────────────────────────────────────
+SyslogFacility AUTH
+LogLevel VERBOSE
+
+# ── Ciphers & Algorithms (strong only) ────────────────────────
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr
+MACs hmac-sha2-512,hmac-sha2-256
+KexAlgorithms curve25519-sha256,diffie-hellman-group14-sha256
