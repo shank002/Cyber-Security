@@ -1,0 +1,21 @@
+# Custom Snort Detection Rules
+# File: /etc/snort/rules/custom.rules
+# Description: Custom IDS rules for home lab attack detection (Snort syntax)
+# Author: [Your Name]
+# Last Updated: 2026
+# Note: Rule syntax is identical to Suricata — both tools share the same format
+
+# ─────────────────────────────────────────────
+# RULE 1 — SSH Brute Force Detection
+# ─────────────────────────────────────────────
+alert tcp any any -> $HOME_NET 22 (msg:"SSH Brute Force Attempt"; threshold:type threshold, track by_src, count 5, seconds 10; sid:1000002; rev:1;)
+
+# ─────────────────────────────────────────────
+# RULE 2 — Nmap Port Scan Detection
+# ─────────────────────────────────────────────
+alert tcp any any -> $HOME_NET any (msg:"Nmap Port Scan Detected"; flags:S; threshold:type threshold, track by_src, count 20, seconds 3; sid:1000003; rev:1;)
+
+# ─────────────────────────────────────────────
+# RULE 3 — ICMP Ping Flood Detection
+# ─────────────────────────────────────────────
+alert icmp any any -> $HOME_NET any (msg:"ICMP Ping Flood Detected"; threshold:type threshold, track by_src, count 10, seconds 2; sid:1000004; rev:1;)

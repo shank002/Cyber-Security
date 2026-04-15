@@ -1,0 +1,165 @@
+# =============================================================================
+# Suricata Configuration Reference
+# File: /etc/suricata/suricata.yaml
+# Description: Key configuration changes made for the IDS home lab project
+# Note: This is not the full suricata.yaml — it highlights only the sections
+#       that were modified from defaults. The full file is generated on install.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# SECTION 1 — Network Variables
+# Define your home/defended network and external network
+# -----------------------------------------------------------------------------
+vars:
+  address-groups:
+    HOME_NET: "[192.168.56.0/24]"       # Your defender VM subnet
+    EXTERNAL_NET: "!$HOME_NET"          # Everything outside HOME_NET
+
+  port-groups:
+    HTTP_PORTS: "80"
+    SHELLCODE_PORTS: "!80"
+    ORACLE_PORTS: 1521
+    SSH_PORTS: 22
+    DNP3_PORTS: 20000
+    MODBUS_PORTS: 502
+    FILE_DATA_PORTS: "[$HTTP_PORTS,110,143]"
+    FTP_PORTS: 21
+    VXLAN_PORTS: 4789
+    TEREDO_PORTS: 3544
+
+
+# -----------------------------------------------------------------------------
+# SECTION 2 — Capture Settings (AF-Packet)
+# Tells Suricata which network interface to listen on
+# IMPORTANT: Change 'interface' to match your actual interface (check with ip a)
+# -----------------------------------------------------------------------------
+af-packet:
+  - interface: enp0s3                   # Replace with your actual interface name
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    tpacket-v3: yes
+
+
+# -----------------------------------------------------------------------------
+# SECTION 3 — Default Log Directory
+# All logs (fast.log, eve.json, stats.log) go here
+# -----------------------------------------------------------------------------
+default-log-dir: /var/log/suricata/
+
+
+# -----------------------------------------------------------------------------
+# SECTION 4 — Output Logs
+# Configure which log formats are enabled
+# -----------------------------------------------------------------------------
+outputs:
+
+  # Fast log — human-readable one-line alerts (good for terminal monitoring)
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+
+  # Eve JSON log — rich structured JSON (used by Splunk Universal Forwarder)
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert:
+            payload: yes
+            payload-buffer-size: 4kb
+            payload-printable: yes
+            packet: yes
+            metadata: yes
+            http-body: yes
+            http-body-printable: yes
+            tagged-packets: yes
+        - http:
+            extended: yes
+        - dns:
+            query: yes
+            answer: yes
+        - tls:
+            extended: yes
+        - files:
+            force-magic: no
+        - smtp:
+        - ssh
+        - stats:
+            totals: yes
+            threads: no
+            deltas: no
+        - flow
+
+  # Stats log — Suricata engine performance stats
+  - stats:
+      enabled: yes
+      filename: stats.log
+      append: yes
+      totals: yes
+      threads: no
+
+
+# -----------------------------------------------------------------------------
+# SECTION 5 — Rule Files
+# List all rule files Suricata should load
+# Add your custom rules file here after the default suricata.rules
+# -----------------------------------------------------------------------------
+default-rule-path: /etc/suricata/rules
+
+rule-files:
+  - suricata.rules                      # Default community ruleset (from suricata-update)
+  - custom.rules                        # Custom rules written for this project
+
+
+# -----------------------------------------------------------------------------
+# SECTION 6 — Detection Engine Settings
+# -----------------------------------------------------------------------------
+detect:
+  profile: medium
+  custom-values:
+    toclient-groups: 3
+    toserver-groups: 25
+  sgh-mpm-context: auto
+  inspection-recursion-limit: 3000
+
+
+# -----------------------------------------------------------------------------
+# SECTION 7 — App Layer Protocols
+# Enable/disable protocol detection for specific app-layer protocols
+# -----------------------------------------------------------------------------
+app-layer:
+  protocols:
+    tls:
+      enabled: yes
+      detection-ports:
+        dp: 443
+    http:
+      enabled: yes
+      libhtp:
+        default-config:
+          personality: IDS
+          request-body-limit: 100kb
+          response-body-limit: 100kb
+    ssh:
+      enabled: yes                      # Needed for SSH brute force detection
+    smtp:
+      enabled: yes
+    dns:
+      enabled: yes
+
+
+# -----------------------------------------------------------------------------
+# NOTES
+# -----------------------------------------------------------------------------
+# After any changes to this file, always validate before restarting:
+#   sudo suricata -T -c /etc/suricata/suricata.yaml
+#
+# Then restart the service:
+#   sudo systemctl restart suricata
+#
+# Watch alerts in real time:
+#   sudo tail -f /var/log/suricata/fast.log
