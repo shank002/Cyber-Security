@@ -1,0 +1,123 @@
+<dashboard version="1.1">
+  <label>Auth Logs Dashboard</label>
+  <description>Authentication monitoring — sudo usage, account failures, invalid users, and login timelines across all Linux hosts.</description>
+
+  <row>
+    <panel>
+      <single>
+        <title>Auth Failures (24h)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "authentication failure" earliest=-24h | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">background</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,10]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Invalid User Attempts (24h)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Invalid user" earliest=-24h | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">background</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,20]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Sudo Commands Executed (24h)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "sudo" "COMMAND" earliest=-24h | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <chart>
+        <title>Auth Events Over Time by Host</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure | timechart span=1h count by host</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <table>
+        <title>Sudo Commands by User</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "sudo" "COMMAND" | rex field=_raw "sudo:\s+(?P&lt;user&gt;\S+)\s+:.*COMMAND=(?P&lt;command&gt;.+)" | stats count by user, command, host | sort -count | head 20</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+
+    <panel>
+      <table>
+        <title>Invalid User Login Attempts</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Invalid user" | rex field=_raw "Invalid user (?P&lt;user&gt;\S+) from (?P&lt;src_ip&gt;\S+)" | stats count by user, src_ip | sort -count | head 20</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <chart>
+        <title>Authentication Failures by Host</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "authentication failure" | stats count as failures by host | sort -failures</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.seriesColors">["0xf1813f"]</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+
+    <panel>
+      <table>
+        <title>After-Hours SSH Logins (Outside 08:00–18:00)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Accepted password" | eval hour=strftime(_time, "%H") | where hour &lt; "08" OR hour &gt; "18" | rex field=_raw "for (?P&lt;user&gt;\S+) from (?P&lt;src_ip&gt;\S+)" | table _time, host, user, src_ip, hour | sort -_time | head 20</query>
+          <earliest>-7d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+      </table>
+    </panel>
+  </row>
+
+</dashboard>

@@ -1,0 +1,116 @@
+<dashboard version="1.1">
+  <label>SSH Monitoring Dashboard</label>
+  <description>Real-time monitoring of SSH login attempts, failures, and source IPs across all Linux hosts.</description>
+
+  <row>
+    <panel>
+      <single>
+        <title>Total Failed SSH Logins (24h)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Failed password" earliest=-24h | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">background</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,50,200]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Total Successful SSH Logins (24h)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Accepted password" OR "Accepted publickey" earliest=-24h | stats count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">background</option>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+
+    <panel>
+      <single>
+        <title>Unique Attacking IPs (24h)</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Failed password" earliest=-24h | rex field=_raw "from (?P&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | stats dc(src_ip) as unique_ips | fields unique_ips</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">background</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xdc4e41"]</option>
+        <option name="rangeValues">[0,5]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <chart>
+        <title>SSH Login Attempts Over Time</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure ("Failed password" OR "Accepted password") | rex field=_raw "(?P&lt;action&gt;Failed|Accepted) password" | timechart span=10m count by action</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.seriesColors">["0xdc4e41","0x53a051"]</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <chart>
+        <title>Top 10 Source IPs — Failed Logins</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure "Failed password" | rex field=_raw "from (?P&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)" | stats count as attempts by src_ip | sort -attempts | head 10</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.seriesColors">["0xdc4e41"]</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+
+    <panel>
+      <table>
+        <title>Recent Login Activity</title>
+        <search>
+          <query>index=auth_logs sourcetype=linux_secure ("Failed password" OR "Accepted password") | rex field=_raw "(?P&lt;action&gt;Failed|Accepted) (?P&lt;method&gt;\w+) for (?P&lt;user&gt;\S+) from (?P&lt;src_ip&gt;\S+)" | table _time, host, action, user, src_ip | sort -_time | head 30</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rowNumbers">true</option>
+        <option name="wrap">false</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <chart>
+        <title>Custom SSH Autologin Events (JSON)</title>
+        <search>
+          <query>index=ssh_logs sourcetype=_json | spath output=status path=status | timechart span=1h count by status</query>
+          <earliest>-7d</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.seriesColors">["0x53a051","0xdc4e41"]</option>
+      </chart>
+    </panel>
+  </row>
+
+</dashboard>
