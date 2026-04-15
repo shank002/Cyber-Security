@@ -1,4 +1,4 @@
-# 🛡️ SIEM Dashboard with Splunk — Cybersecurity Portfolio Project
+# 🛡️ SIEM Dashboard with Splunk — Cybersecurity Project
 
 > Centralized log collection, monitoring, and alerting using Splunk on Linux infrastructure.
 
