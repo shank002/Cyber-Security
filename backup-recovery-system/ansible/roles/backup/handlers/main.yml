@@ -1,0 +1,22 @@
+---
+# =============================================================================
+# roles/backup/handlers/main.yml — Handlers
+# =============================================================================
+# Handlers are tasks that only run when "notified" by another task.
+# They run ONCE at the end of a play, even if notified multiple times.
+#
+# Example: if 3 scripts are deployed (3 "notify" calls), the validation
+# handler runs just once at the end — not 3 times.
+#
+# This is the standard Ansible pattern for "do X only if something changed".
+# =============================================================================
+
+- name: Validate backup scripts
+  ansible.builtin.command: bash -n "{{ backup_scripts_dir }}/{{ item }}"
+  loop:
+    - full_backup.sh
+    - incremental_backup.sh
+    - restore.sh
+    - backup_monitor.sh
+  changed_when: false
+  # bash -n does a syntax check without executing the script

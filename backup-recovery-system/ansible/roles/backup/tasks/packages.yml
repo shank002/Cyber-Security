@@ -1,0 +1,29 @@
+---
+# =============================================================================
+# roles/backup/tasks/packages.yml — Install Required Packages
+# =============================================================================
+# ansible.builtin.dnf is idempotent — if rsync is already installed,
+# Ansible prints "ok" and moves on without reinstalling anything.
+# =============================================================================
+
+- name: Install rsync
+  ansible.builtin.dnf:
+    name: rsync
+    state: present      # "present" = install if missing, don't upgrade
+
+- name: Install cronie (cron daemon)
+  ansible.builtin.dnf:
+    name: cronie
+    state: present
+
+- name: Install mailx for alert emails
+  ansible.builtin.dnf:
+    name: mailx
+    state: present
+  when: backup_alert_email | length > 0
+
+- name: Ensure crond service is enabled and running
+  ansible.builtin.service:
+    name: crond
+    state: started
+    enabled: true       # start automatically on boot

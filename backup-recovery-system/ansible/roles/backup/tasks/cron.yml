@@ -1,0 +1,41 @@
+---
+# =============================================================================
+# roles/backup/tasks/cron.yml — Configure Cron Jobs
+# =============================================================================
+# ansible.builtin.cron manages individual cron entries.
+# It is fully idempotent — running this twice results in exactly one cron entry
+# per job. It uses the "name" field as a unique identifier.
+#
+# If you change the schedule variables and re-run the playbook,
+# Ansible updates the existing entries — no duplicates, no manual cleanup.
+# =============================================================================
+
+- name: Schedule weekly full backup (Sunday 2am)
+  ansible.builtin.cron:
+    name: "backup-full"           # unique name — Ansible uses this as the ID
+    minute: "{{ backup_full_cron_minute }}"
+    hour: "{{ backup_full_cron_hour }}"
+    weekday: "{{ backup_full_cron_weekday }}"
+    user: root
+    job: "{{ backup_scripts_dir }}/full_backup.sh >> {{ backup_log_dir }}/cron.log 2>&1"
+    state: present
+
+- name: Schedule daily incremental backup (Mon-Sat 2am)
+  ansible.builtin.cron:
+    name: "backup-incremental"
+    minute: "{{ backup_incr_cron_minute }}"
+    hour: "{{ backup_incr_cron_hour }}"
+    weekday: "{{ backup_incr_cron_weekday }}"
+    user: root
+    job: "{{ backup_scripts_dir }}/incremental_backup.sh >> {{ backup_log_dir }}/cron.log 2>&1"
+    state: present
+
+- name: Schedule daily backup monitor (8am)
+  ansible.builtin.cron:
+    name: "backup-monitor"
+    minute: "{{ backup_monitor_cron_minute }}"
+    hour: "{{ backup_monitor_cron_hour }}"
+    weekday: "{{ backup_monitor_cron_weekday }}"
+    user: root
+    job: "{{ backup_scripts_dir }}/backup_monitor.sh >> {{ backup_log_dir }}/monitor.log 2>&1"
+    state: present

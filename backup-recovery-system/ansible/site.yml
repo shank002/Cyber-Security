@@ -1,0 +1,24 @@
+---
+# =============================================================================
+# site.yml — Master Playbook
+# =============================================================================
+# This is the entry point. Run it with:
+#   ansible-playbook -i inventory.ini site.yml
+#
+# To target only one server:
+#   ansible-playbook -i inventory.ini site.yml --limit web-01
+#
+# Dry run (check what would change, no actual changes):
+#   ansible-playbook -i inventory.ini site.yml --check
+#
+# See detailed output for every task:
+#   ansible-playbook -i inventory.ini site.yml -v
+# =============================================================================
+
+- name: Deploy backup system to all backup servers
+  hosts: backup_servers
+  become: true        # run tasks as root (sudo)
+  gather_facts: true  # collect server info (OS, hostname, IPs) before running
+
+  roles:
+    - backup           # applies everything in roles/backup/

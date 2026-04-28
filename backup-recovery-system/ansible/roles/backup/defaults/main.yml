@@ -1,0 +1,61 @@
+---
+# =============================================================================
+# roles/backup/defaults/main.yml — Default Variables
+# =============================================================================
+# These are the defaults. Override them in:
+#   - host_vars/<hostname>.yml    (per server)
+#   - group_vars/backup_servers.yml  (per group)
+#   - inventory.ini vars section
+# =============================================================================
+
+# --- Directories ---
+backup_root: /backup
+backup_full_dir: "{{ backup_root }}/full"
+backup_incr_dir: "{{ backup_root }}/incremental"
+backup_log_dir: /var/log/backup
+backup_scripts_dir: /usr/local/bin
+
+# --- Retention policy ---
+backup_retention_weeks: 4       # how many full backups to keep
+backup_retention_days: 30       # how many incremental backups to keep
+
+# --- Source directories to back up ---
+backup_source_dirs:
+  - /etc
+  - /home
+  - /root
+  - /var/www
+  - /opt
+
+# --- Paths to exclude from backup ---
+backup_excludes:
+  - /proc
+  - /sys
+  - /dev
+  - /run
+  - /tmp
+  - /var/tmp
+  - "*.tmp"
+  - "*.cache"
+
+# --- Schedule (cron syntax) ---
+backup_full_cron_minute: "0"
+backup_full_cron_hour: "2"
+backup_full_cron_weekday: "0"     # 0 = Sunday
+
+backup_incr_cron_minute: "0"
+backup_incr_cron_hour: "2"
+backup_incr_cron_weekday: "1-6"  # Monday through Saturday
+
+backup_monitor_cron_minute: "0"
+backup_monitor_cron_hour: "8"
+backup_monitor_cron_weekday: "*"  # every day
+
+# --- Alert email (leave empty to disable) ---
+backup_alert_email: ""
+
+# --- Disk warning threshold (%) ---
+backup_warn_disk_percent: 85
+
+# --- SELinux ---
+backup_configure_selinux: true   # set to false to skip SELinux config

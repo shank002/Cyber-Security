@@ -1,0 +1,34 @@
+---
+# =============================================================================
+# roles/backup/tasks/selinux.yml — SELinux Configuration (Rocky Linux specific)
+# =============================================================================
+# Rocky Linux runs SELinux in enforcing mode by default.
+# Without these settings, rsync may be blocked from reading certain directories.
+#
+# ansible.builtin.seboolean sets SELinux booleans — the correct way to grant
+# rsync extended read permissions without disabling SELinux entirely.
+# =============================================================================
+
+- name: Check if SELinux is enabled
+  ansible.builtin.command: getenforce
+  register: selinux_status
+  changed_when: false   # this task is read-only, never counts as a "change"
+  failed_when: false    # don't fail if getenforce is not found
+
+- name: Allow rsync to read all files (SELinux boolean)
+  ansible.posix.seboolean:
+    name: rsync_full_access
+    state: true
+    persistent: true    # survives reboots (writes to /etc/selinux/)
+  when:
+    - selinux_status.rc == 0
+    - selinux_status.stdout != "Disabled"
+
+- name: Set correct SELinux context on backup directories
+  ansible.builtin.command: >
+    restorecon -Rv {{ backup_root }}
+  register: restorecon_result
+  changed_when: "'Relabeled' in restorecon_result.stdout"
+  when:
+    - selinux_status.rc == 0
+    - selinux_status.stdout != "Disabled"

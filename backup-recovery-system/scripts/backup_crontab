@@ -1,0 +1,24 @@
+# =============================================================================
+# Backup System Crontab — Rocky Linux
+# =============================================================================
+# Install: sudo crontab -e   (then paste the lines below)
+# Or drop this file into /etc/cron.d/backup_system
+# =============================================================================
+# IMPORTANT: Make sure all scripts are executable first:
+#   sudo chmod +x /usr/local/bin/full_backup.sh
+#   sudo chmod +x /usr/local/bin/incremental_backup.sh
+#   sudo chmod +x /usr/local/bin/backup_monitor.sh
+# =============================================================================
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=""
+
+# Full backup — every Sunday at 2:00 AM
+0 2 * * 0 root /usr/local/bin/full_backup.sh >> /var/log/backup/cron.log 2>&1
+
+# Incremental backup — Monday through Saturday at 2:00 AM
+0 2 * * 1-6 root /usr/local/bin/incremental_backup.sh >> /var/log/backup/cron.log 2>&1
+
+# Health check report — every day at 8:00 AM
+0 8 * * * root /usr/local/bin/backup_monitor.sh >> /var/log/backup/monitor.log 2>&1

@@ -1,0 +1,39 @@
+---
+# =============================================================================
+# roles/backup/tasks/directories.yml — Create Directory Structure
+# =============================================================================
+# ansible.builtin.file with state: directory is idempotent —
+# if the directory exists with correct permissions, nothing changes.
+# =============================================================================
+
+- name: Create backup root directory
+  ansible.builtin.file:
+    path: "{{ backup_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"          # rwxr-x--- (root only, no world access)
+
+- name: Create full backup directory
+  ansible.builtin.file:
+    path: "{{ backup_full_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Create incremental backup directory
+  ansible.builtin.file:
+    path: "{{ backup_incr_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Create log directory
+  ansible.builtin.file:
+    path: "{{ backup_log_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"

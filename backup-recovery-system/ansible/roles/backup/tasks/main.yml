@@ -1,0 +1,26 @@
+---
+# =============================================================================
+# roles/backup/tasks/main.yml — Task Orchestrator
+# =============================================================================
+# Ansible runs these task files in order, top to bottom.
+# Each include_tasks pulls in a focused file for one concern.
+# =============================================================================
+
+- name: Include package installation tasks
+  ansible.builtin.include_tasks: packages.yml
+
+- name: Include directory setup tasks
+  ansible.builtin.include_tasks: directories.yml
+
+- name: Include script deployment tasks
+  ansible.builtin.include_tasks: scripts.yml
+
+- name: Include cron job setup tasks
+  ansible.builtin.include_tasks: cron.yml
+
+- name: Include SELinux configuration tasks
+  ansible.builtin.include_tasks: selinux.yml
+  when: backup_configure_selinux | bool
+
+- name: Include verification tasks
+  ansible.builtin.include_tasks: verify.yml

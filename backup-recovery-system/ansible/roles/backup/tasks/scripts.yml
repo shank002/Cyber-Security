@@ -1,0 +1,49 @@
+---
+# =============================================================================
+# roles/backup/tasks/scripts.yml — Deploy Backup Scripts
+# =============================================================================
+# ansible.builtin.template renders Jinja2 templates from roles/backup/templates/
+# and copies the result to the target server.
+#
+# The key difference from ansible.builtin.copy:
+#   - copy       → copies a file exactly as-is
+#   - template   → replaces {{ variables }} before copying
+#
+# This means your scripts automatically get the right BACKUP_ROOT, ALERT_EMAIL,
+# RETENTION_WEEKS, etc. injected from your variables — no manual editing needed
+# on each server.
+# =============================================================================
+
+- name: Deploy full backup script
+  ansible.builtin.template:
+    src: full_backup.sh.j2          # source: roles/backup/templates/
+    dest: "{{ backup_scripts_dir }}/full_backup.sh"
+    owner: root
+    group: root
+    mode: "0750"                    # executable, root-only
+  notify: Validate backup scripts   # triggers handler after this task
+
+- name: Deploy incremental backup script
+  ansible.builtin.template:
+    src: incremental_backup.sh.j2
+    dest: "{{ backup_scripts_dir }}/incremental_backup.sh"
+    owner: root
+    group: root
+    mode: "0750"
+  notify: Validate backup scripts
+
+- name: Deploy restore script
+  ansible.builtin.template:
+    src: restore.sh.j2
+    dest: "{{ backup_scripts_dir }}/restore.sh"
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Deploy monitor script
+  ansible.builtin.template:
+    src: backup_monitor.sh.j2
+    dest: "{{ backup_scripts_dir }}/backup_monitor.sh"
+    owner: root
+    group: root
+    mode: "0750"

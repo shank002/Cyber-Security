@@ -1,0 +1,70 @@
+---
+# =============================================================================
+# roles/backup/tasks/verify.yml — Post-Deployment Verification
+# =============================================================================
+# These tasks confirm the deployment worked correctly.
+# They use ansible.builtin.stat to check files exist and are executable,
+# and ansible.builtin.assert to fail with a clear message if anything is wrong.
+#
+# Think of this as your automated smoke test — runs every time you deploy.
+# =============================================================================
+
+- name: Check that all backup scripts exist and are executable
+  ansible.builtin.stat:
+    path: "{{ backup_scripts_dir }}/{{ item }}"
+  register: script_stat
+  loop:
+    - full_backup.sh
+    - incremental_backup.sh
+    - restore.sh
+    - backup_monitor.sh
+
+- name: Assert all scripts are present and executable
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+      - item.stat.executable
+    fail_msg: "Script missing or not executable: {{ item.item }}"
+    success_msg: "Script OK: {{ item.item }}"
+  loop: "{{ script_stat.results }}"
+
+- name: Check backup directories exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: dir_stat
+  loop:
+    - "{{ backup_root }}"
+    - "{{ backup_full_dir }}"
+    - "{{ backup_incr_dir }}"
+    - "{{ backup_log_dir }}"
+
+- name: Assert backup directories exist
+  ansible.builtin.assert:
+    that: item.stat.isdir
+    fail_msg: "Directory missing: {{ item.item }}"
+    success_msg: "Directory OK: {{ item.item }}"
+  loop: "{{ dir_stat.results }}"
+
+- name: Verify cron jobs are registered
+  ansible.builtin.command: crontab -l -u root
+  register: crontab_output
+  changed_when: false
+
+- name: Assert all cron jobs are present
+  ansible.builtin.assert:
+    that:
+      - "'full_backup.sh' in crontab_output.stdout"
+      - "'incremental_backup.sh' in crontab_output.stdout"
+      - "'backup_monitor.sh' in crontab_output.stdout"
+    fail_msg: "One or more cron jobs are missing from root's crontab"
+    success_msg: "All cron jobs are registered"
+
+- name: Print deployment summary
+  ansible.builtin.debug:
+    msg:
+      - "Backup system deployed successfully on {{ inventory_hostname }}"
+      - "Backup root     : {{ backup_root }}"
+      - "Full backups    : Sundays at {{ backup_full_cron_hour }}:{{ backup_full_cron_minute }}am"
+      - "Incrementals    : Mon-Sat at {{ backup_incr_cron_hour }}:{{ backup_incr_cron_minute }}am"
+      - "Monitor         : Daily at {{ backup_monitor_cron_hour }}:{{ backup_monitor_cron_minute }}am"
+      - "Alert email     : {{ backup_alert_email if backup_alert_email else 'not configured' }}"
