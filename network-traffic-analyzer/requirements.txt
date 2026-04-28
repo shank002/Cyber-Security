@@ -1,0 +1,5 @@
+# PCAP Analyzer — Python dependencies
+# Install with: pip3 install -r requirements.txt --break-system-packages
+
+dpkt>=1.9.8
+rich>=13.0.0
